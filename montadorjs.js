@@ -7,6 +7,7 @@ class Montador {
   constructor() {
     /**
      * Memoria
+     * representa a memória do programa -- a saída do montador é colocada aqui
      */
     this.memoria = [];
 
@@ -45,7 +46,94 @@ class Montador {
      * tabela com os símbolos (labels) já definidos pelo programa, e o valor (endereço) deles
      */
     this.simbolos = [];
+
+    /**
+     * tabela com referências a símbolos
+     * contém a linha e o endereço correspondente onde o símbolo foi referenciado
+     */
+    this.referencias = [];
   }
+
+  // MEMORIA DE SAIDA
+
+  /**
+   * coloca um valor no final da memória
+   * @param {Number} val
+   * @returns
+   */
+  memInsere(valor) {
+    if (valor === null) return;
+    this.memoria.push(valor);
+  }
+
+  /**
+   * altera o valor em uma posição já ocupada da memória
+   * @param {Number} posicao
+   * @param {Number} valor
+   * @returns
+   */
+  memAltera(posicao, valor) {
+    this.memoria[posicao] = valor;
+  }
+
+  /**
+   * imprime o conteúdo da memória
+   * @returns
+   */
+  memImprime() {
+    for (let i = 0; i < this.memoria.length; i += 10) {
+      let string = "/* " + i + "*/";
+      for (let j = i; j < i + 10 && j < this.memoria.length; j++) {
+        string += this.memoria[j] + ", ";
+      }
+      console.log(string);
+    }
+  }
+
+  // FIM MEMORIA DE SAIDA
+  // REFERÊNCIAS
+
+  /**
+   * insere uma nova referência na tabela
+   * @param {string} nome
+   * @param {Number} index
+   * @param {Number} endereco
+   * @returns
+   */
+  refNova(nome, index, endereco) {
+    if (nome == null) return;
+    //console.log(nome);
+    let referencia = {
+      nome: nome,
+      linha: index,
+      endereco: endereco,
+    };
+    this.referencias.push(referencia);
+  }
+
+  /**
+   * resolve as referências -- para cada referência, coloca o valor do símbolo
+   * no endereço onde ele é referenciado
+   * @returns
+   */
+  refResolve() {
+    //console.log(this.referencias.length);
+    for (let i = 0; i < this.referencias.length; i++) {
+      const endereco = this.simbEndereco(this.referencias[i].nome);
+      if (endereco == -1) {
+        console.error(
+          "ERRO: simbolo '" +
+            this.referencias[i].nome +
+            "' referenciado na linha " +
+            this.referencias[i].linha +
+            " não foi definido"
+        );
+      }
+      this.memAltera(this.referencias[i].endereco, endereco);
+    }
+  }
+
+  // FIM REFERÊNCIAS
 
   /**
    *
@@ -66,7 +154,8 @@ class Montador {
       data.forEach((linha, index) => {
         this.montaString(index, linha);
       });
-      //this.ref_resolve();
+      //console.log(this.referencias);
+      this.refResolve();
     } catch (err) {
       console.error(err);
     }
@@ -209,7 +298,7 @@ class Montador {
       return;
     }
 
-    if (arg !== null) console.log(this.simbolos);
+    //if (arg !== null) console.log(this.simbolos);
     this.montaInstrucao(index, numInstr, arg);
   }
 
@@ -220,7 +309,7 @@ class Montador {
    * @param {Number} opcode
    * @param {string} arg
    */
-  montaInstrucao(linha, opcode, arg) {
+  montaInstrucao(index, opcode, arg) {
     /**
      * para conter o valor numérico do argumento
      * @var {Number} argn
@@ -232,44 +321,37 @@ class Montador {
      */
     const commands = Object.keys(this.instrucoes);
     if (opcode === commands.indexOf("ESPACO")) {
-      if (argn = temNumero(arg, &argn) !== false || argn < 1) {
-        console.error(stderr, "ERRO: linha %d 'ESPACO' deve ter valor positivo\n",
-                linha);
+      if ((argn = temNumero(arg, argn) !== false || argn < 1)) {
+        console.error(
+          "ERRO: linha " + index + " 'ESPACO' deve ter valor positivo"
+        );
         return;
       }
-      for (int i = 0; i < argn; i++) {
-        mem_insere(0);
+      for (let i = 0; i < argn; i++) {
+        this.memInsere(0);
       }
       return;
+    } else if (opcode === commands.indexOf("VALOR")) {
+      // nao faz nada, vai inserir o valor definido em arg
+    } else {
+      // instrução real, coloca o opcode da instrução na memória
+      this.memInsere(opcode);
     }
 
-    /*// trata pseudo-opcodes antes
-  if (opcode == ESPACO) {
-    if (!tem_numero(arg, &argn) || argn < 1) {
-      fprintf(stderr, "ERRO: linha %d 'ESPACO' deve ter valor positivo\n",
-              linha);
+    // Verifica se tem argumento
+    if (this.instrucoes[commands[opcode]] == 0) {
       return;
     }
-    for (int i = 0; i < argn; i++) {
-      mem_insere(0);
+    argn = this.temNumero(arg, argn); //console.log(argn);
+    if (argn !== false) {
+      this.memInsere(argn);
+    } else {
+      // não é número, põe um 0 e insere uma referência para alterar depois
+      //console.log(arg);
+      this.refNova(arg, index, this.memoria.length);
+      this.memInsere(0);
+      //console.log(this.referencias);
     }
-    return;
-  } else if (opcode == VALOR) {
-    // nao faz nada, vai inserir o valor definido em arg
-  } else {
-    // instrução real, coloca o opcode da instrução na memória
-    mem_insere(opcode);
-  }
-  if (instrucoes[opcode].num_args == 0) {
-    return;
-  }
-  if (tem_numero(arg, &argn)) {
-    mem_insere(argn);
-  } else {
-    // não é número, põe um 0 e insere uma referência para alterar depois
-    ref_nova(arg, linha, mem_pos);
-    mem_insere(0);
-  }*/
   }
 
   /**
@@ -288,11 +370,10 @@ class Montador {
 
   /**
    * retorna true se tem um número na string s (e retorna o número também)
-   * @param {string} s
    * @param {Number} num
    * @returns {Number/Boolean}
    */
-  temNumero(s, num) {
+  temNumero(num) {
     if (this.isNumber(num)) {
       return parseFloat(num);
     }
@@ -336,13 +417,16 @@ class Montador {
    */
   simbEndereco(nome) {
     const simbolo = this.simbolos.find((simb) => simb.nome === nome);
+    //console.log(simbolo);
     if (simbolo) {
-      return this.simbolos[nome].endereco;
+      return simbolo.endereco;
     }
     return -1;
   }
 
   // FIM SIMBOLOS
+
+  //
 
   /**
    * aborta o programa com uma mensagem de erro
@@ -351,8 +435,6 @@ class Montador {
   erroBrabo(msg) {
     console.error("ERRO FATAL: " + msg);
   }
-
-  memImprime() {}
 }
 
 export default Montador;
