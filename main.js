@@ -1,6 +1,6 @@
-import Montador from "./montadorjs.js";
+import Montador from "./montador.js";
 function main() {
   let monstador = new Montador();
-  monstador.inicia("ex1.asm");
+  monstador.inicia("ex1");
 }
 main();

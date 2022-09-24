@@ -1,393 +1,517 @@
-// montador para o processador de SO
+import fs from "fs";
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
-#include <ctype.h>
+/**
+ * Esse arquivo é do montador o objetivo dele é converter um código asm para condigo de maquina,
+ * para fazer funcionar tem que chamar a função 'inicia(nomeDoArquivo)'
+ */
 
-// auxiliares
+class Montador {
+  /**
+   * contrustutor
+   */
+  constructor() {
+    /**
+     * Memoria
+     * Representa a memória do programa -- a saída do montador é colocada aqui
+     * Array de números inteiros
+     * @var {array} memoria
+     */
+    this.memoria = [];
 
-// aborta o programa com uma mensagem de erro
-void erro_brabo(char *msg)
-{
-  fprintf(stderr, "ERRO FATAL: %s\n", msg);
-  exit(1);
-}
+    /**
+     * Instruções
+     * O número representa a quantidade de parametros que a instrução tem
+     * VALOR  - inicaliza a próxima posição de memória com o valor do argumento
+     * ESPACO - reserva tantas palavras de espaço nas próximas posições da
+     * memória (corresponde a tantos "VALOR 0")
+     * DEFINE - define um valor para um símbolo (obrigatoriamente tem que ter
+     * um label, que é definido com o valor do argumento e não com a
+     * posição atual da memória) -- ainda não implementado
+     * @var {Object} instrucoes
+     */
+    this.instrucoes = {
+      NOP: 0,
+      PARA: 0,
+      CARGI: 1,
+      CARGM: 1,
+      CARGX: 1,
+      ARMM: 1,
+      ARMX: 1,
+      MVAX: 0,
+      MVXA: 0,
+      INCX: 0,
+      SOMA: 1,
+      SUB: 1,
+      MULT: 1,
+      DIV: 1,
+      RESTO: 1,
+      NEG: 0,
+      DESV: 1,
+      DESVZ: 1,
+      DESVNZ: 1,
+      LE: 1,
+      ESCR: 1,
+      // Pseudo-instrucoes
+      VALOR: 1,
+      ESPACO: 1,
+      DEFINE: 1,
+    };
 
-// retorna true se tem um número na string s (e retorna o número também)
-bool tem_numero(char *s, int *num)
-{
-  if (isdigit(*s) || (*s == '-' && isdigit(*(s+1)))) {
-    *num = atoi(s);
-    return true;
+    /**
+     * Tabela com os símbolos (labels) já definidos pelo programa, e o valor (endereço) deles
+     * Ou contem o endereço de uma label
+     * Ou contem o valor de um define
+     * Objeto:
+     * {
+     *  nome: nome,
+     *  endereco: endereco,
+     * }
+     * @var {array} simbolos
+     */
+    this.simbolos = [];
+
+    /**
+     * Tabela com referências a símbolos
+     * Contém a linha e o endereço correspondente onde o símbolo foi referenciado
+     * Objeto:
+     * {
+     *    nome: nome,
+     *    linha: index,
+     *    endereco: endereco,
+     * }
+     * @var {array} referencias
+     */
+    this.referencias = [];
   }
-  return false;
-}
 
-// memoria de saida
-
-// representa a memória do programa -- a saída do montador é colocada aqui
-
-#define MEM_TAM 1000    // aumentar para programas maiores
-int mem[MEM_TAM];
-int mem_pos;        // próxima posiçao livre da memória
-
-// coloca um valor no final da memória
-void mem_insere(int val)
-{
-  if (mem_pos >= MEM_TAM-1) {
-    erro_brabo("programa muito grande! Aumente MEM_TAM no montador.");
+  /**
+   * Essa é a primeira função que deve ser chamada ao instanciar o motador
+   * Ela recebe o caminho do arquivo com entrada
+   * @param {string} arquivo
+   */
+  inicia(arquivo) {
+    this.montaArquivo(arquivo);
+    this.memoriaImprime(arquivo);
   }
-  mem[mem_pos++] = val;
-}
 
-// altera o valor em uma posição já ocupada da memória
-void mem_altera(int pos, int val)
-{
-  if (pos < 0 || pos >= mem_pos) {
-    erro_brabo("erro interno, alteração de região não inicializada");
-  }
-  mem[pos] = val;
-}
-
-// imprime o conteúdo da memória
-void mem_imprime(void)
-{
-  for (int i = 0; i < mem_pos; i+=10) {
-    printf("    /*%4d */", i);
-    for (int j = i; j < i+10 && j < mem_pos; j++) {
-      printf(" %d,", mem[j]);
+  /**
+   *
+   * @param {string} arquivo nome do arquivo que seja compilado
+   */
+  montaArquivo(arquivo) {
+    try {
+      const data = fs
+        .readFileSync(arquivo + ".asm", "utf8")
+        .split("\n")
+        .filter(Boolean);
+      // Percorre todas as linhas do arquivo asm
+      data.forEach((linha, index) => {
+        let indexReal = index + 1; // É adicionado 1 pois a linha não começa em 0 e sim em 1
+        this.montaString(indexReal, linha); // Arruma a linha
+      });
+      this.referenciaResolve();
+    } catch (err) {
+      console.error(err);
     }
-    printf("\n");
   }
-}
 
-// simbolos
+  /**
+   * Uma linha montável é formada por [label] instrucao [argumento]
+   * O que está entre [] é opcional
+   * As partes são separadas por espaço(s)
+   * De ';' em diante, ignora-se (comentário)
+   * @param {Number} index
+   * @param {String} linha
+   */
+  montaString(index, linha) {
+    let label = null;
+    let instrucao = null;
+    let argumento = null;
 
-// tabela com os símbolos (labels) já definidos pelo programa, e o valor (endereço) deles
+    // Primeiro elimina todos o comentario da linha
+    linha = this.tiraComentario(linha);
+    /**
+     * O trim tira os espaços inicias da string e verifica se a string tem algum texto, se não tiver
+     * retorna e vai para proxima linha
+     */
+    if (linha.trim().length == 0) return;
 
-#define SIMB_TAM 1000
-struct {
-  char *nome;
-  int endereco;
-} simbolo[SIMB_TAM];
-int simb_num;             // número d símbolos na tabela
-
-// retorna o valor de um símbolo, ou -1 se não existir na tabela
-int simb_endereco(char *nome)
-{
-  for (int i=0; i<simb_num; i++) {
-    if (strcmp(nome, simbolo[i].nome) == 0) {
-      return simbolo[i].endereco;
+    /**
+     * Verifica se a primeira letra da linha é um espaço
+     * se não for um espaço quer dizer que é uma label
+     * Salva o valor na label
+     */
+    if (linha[0] != " ") {
+      label = linha;
     }
-  }
-  return -1;
-}
 
-// insere um novo símbolo na tabela
-void simb_novo(char *nome, int endereco)
-{
-  if (nome == NULL) return;
-  if (simb_endereco(nome) != -1) {
-    fprintf(stderr, "ERRO: redefinicao do simbolo '%s'\n", nome);
+    // Substitui todas os espaço em sequencias por apenas um espaço
+    linha = linha.replace(/\s+/g, " ");
+
+    // Divide o texto da linha em um array separado pelos espaços
+    linha = linha.trim().split(" ");
+    // Verifica se tem 3 textos no array
+    if (linha.length === 3) {
+      // Bota a label
+      label = linha[0];
+      // Bota a instrução
+      instrucao = linha[1];
+      // Bota o argumento
+      argumento = linha[2];
+    } else if (linha.length === 2) {
+      // Verifica se tem dois textos na linha
+      // Verifica se é uma label ou só um instrução com parametro
+      if (label) {
+        // Bota a label
+        label = linha[0];
+        // Bota a instrução
+        instrucao = linha[1];
+      } else {
+        // É uma instrução com um parametro
+        // Bota a instrução
+        instrucao = linha[0];
+        // Bota o argumento
+        argumento = linha[1];
+      }
+    } else if (linha.length === 1) {
+      // Verifica se tem um texto na linha
+      // Bota a instrução
+      instrucao = linha[0];
+    } else {
+      // Erro o código não tem mais textos que o esperado
+      console.error("linha " + index + " ignorando " + linha.join(" "));
+    }
+
+    /**
+     * Se for uma label ou uma instrução monta a linha
+     */
+    if (label != null || instrucao != null) {
+      // Chama o montador de linha
+      this.montaLinha(index, label, instrucao, argumento);
+    }
+
     return;
   }
-  if (simb_num >= SIMB_TAM) {
-    erro_brabo("Excesso de símbolos. Aumente SIMB_TAM no montador.");
+
+  /**
+   * Faz a string terminar no início de um comentário
+   * @param {string} linha
+   */
+  tiraComentario(linha) {
+    const valor = linha.split(";");
+    return valor[0];
   }
-  simbolo[simb_num].nome = strdup(nome);
-  simbolo[simb_num].endereco = endereco;
-  simb_num++;
-}
 
+  /**
+   * Verifica se esta tudo certo e decide o que vai ser feito com a linha
+   * Se for DEFINE cria o simbolo e vai para proxima linha
+   * Se não for DEFINE, faz os testes para ver se esta tudo correto
+   * e cria o simbolo se necessario
+   * e cria a instrução
+   * @param {number} linha
+   * @param {string} label
+   * @param {string} instrucao
+   * @param {string} argumento
+   * @returns
+   */
+  montaLinha(index, label, instrucao, argumento) {
+    /**
+     * Recebe o numero da instrução pelo nome da instrução
+     * @var number numeroDaInstrucao
+     */
+    let numeroDaInstrucao = this.instrucaoOpcode(instrucao);
 
-// referências
-
-// tabela com referências a símbolos
-//   contém a linha e o endereço correspondente onde o símbolo foi referenciado
-
-#define REF_TAM 1000
-struct {
-  char *nome;
-  int linha;
-  int endereco;
-} ref[REF_TAM];
-int ref_num;      // numero de referências criadas
-
-// insere uma nova referência na tabela
-void ref_nova(char *nome, int linha, int endereco)
-{
-  if (nome == NULL) return;
-  if (ref_num >= REF_TAM) {
-    erro_brabo("excesso de referências. Aumente REF_TAM no montador.");
-  }
-  ref[ref_num].nome = strdup(nome);
-  ref[ref_num].linha = linha;
-  ref[ref_num].endereco = endereco;
-  ref_num++;
-}
-
-// resolve as referências -- para cada referência, coloca o valor do símbolo
-//   no endereço onde ele é referenciado
-void ref_resolve(void)
-{
-  for (int i=0; i<ref_num; i++) {
-    int endereco = simb_endereco(ref[i].nome);
-    if (endereco == -1) {
-      fprintf(stderr, 
-              "ERRO: simbolo '%s' referenciado na linha %d não foi definido\n",
-              ref[i].nome, ref[i].linha);
-    }
-    mem_altera(ref[i].endereco, endereco);
-  }
-}
-
-
-// instruções
-
-// tabela com as instruções reconhecidas pelo montador
-// além das instruções da CPU, tem ainda algumas pseudo-instruções,
-// que são processadas pelo montador, não geram código:
-//   VALOR  - inicaliza a próxima posição de memória com o valor do argumento
-//   ESPACO - reserva tantas palavras de espaço nas próximas posições da
-//            memória (corresponde a tantos "VALOR 0")
-//   DEFINE - define um valor para um símbolo (obrigatoriamente tem que ter
-//            um label, que é definido com o valor do argumento e não com a
-//            posição atual da memória) -- ainda não implementado
-
-typedef enum {
-  NOP,    PARA,   CARGI,  CARGM,  CARGX,  ARMM,   ARMX,   MVAX,
-  MVXA,   INCX,   SOMA,   SUB,    MULT,   DIV,    RESTO,  NEG,
-  DESV,   DESVZ,  DESVNZ, LE,     ESCR,
-  VALOR,  ESPACO, DEFINE,
-} opcode_t;
-struct {
-  char *nome;
-  int num_args;
-} instrucoes[] = {
-  { "NOP",    0 },
-  { "PARA",   0 },
-  { "CARGI",  1 },
-  { "CARGM",  1 },
-  { "CARGX",  1 },
-  { "ARMM",   1 },
-  { "ARMX",   1 },
-  { "MVAX",   0 },
-  { "MVXA",   0 },
-  { "INCX",   0 },
-  { "SOMA",   1 },
-  { "SUB",    1 },
-  { "MULT",   1 },
-  { "DIV",    1 },
-  { "RESTO",  1 },
-  { "NEG",    0 },
-  { "DESV",   1 },
-  { "DESVZ",  1 },
-  { "DESVNZ", 1 },
-  { "LE",     1 },
-  { "ESCR",   1 },
-  // pseudo-instrucoes
-  { "VALOR",  1 },
-  { "ESPACO", 1 },
-  { "DEFINE", 1 },
-};
-#define INSTR_NUM (sizeof(instrucoes)/sizeof(instrucoes[0]))
-
-// retorna o opcode correspondente a instrução com o nome dado
-int instr_opcode(char *nome)
-{
-  if (nome == NULL) return -1;
-  for (int i=0; i<INSTR_NUM; i++) {
-    if (strcmp(instrucoes[i].nome, nome) == 0) {
-      return i;
-    }
-  }
-  return -1;
-}
-
-// montagem
-
-// realiza a montagem de uma instrução (gera o código para ela na memória),
-//   tendo opcode e argumento
-void monta_instrucao(int linha, int opcode, char *arg)
-{
-  int argn;  // para conter o valor numérico do argumento
-  
-  // trata pseudo-opcodes antes
-  if (opcode == ESPACO) {
-    if (!tem_numero(arg, &argn) || argn < 1) {
-      fprintf(stderr, "ERRO: linha %d 'ESPACO' deve ter valor positivo\n",
-              linha);
+    /**
+     * pseudo-instrução DEFINE tem que ser tratada antes, porque não pode
+     * definir o label de forma normal
+     */
+    // Pega os nomes das instruções
+    const commands = Object.keys(this.instrucoes);
+    if (numeroDaInstrucao === commands.indexOf("DEFINE")) {
+      /**
+       * Para conter o valor numérico do argumento
+       * @var {Number} argumentoNumero
+       */
+      let argumentoNumero = this.temNumero(argumento);
+      if (label == null) {
+        console.error("ERRO: linha " + index + ": 'DEFINE' exige um label");
+      } else if (argumentoNumero === false) {
+        console.error(
+          "ERRO: linha " + index + ": 'DEFINE' exige valor numérico"
+        );
+      } else {
+        /**
+         * Tudo OK, define o símbolo
+         * Bota no lugar do endereço o valor do define
+         */
+        this.simboloNovo(label, argumentoNumero);
+      }
       return;
     }
-    for (int i = 0; i < argn; i++) {
-      mem_insere(0);
-    }
-    return;
-  } else if (opcode == VALOR) {
-    // nao faz nada, vai inserir o valor definido em arg
-  } else {
-    // instrução real, coloca o opcode da instrução na memória
-    mem_insere(opcode);
-  }
-  if (instrucoes[opcode].num_args == 0) {
-    return;
-  }
-  if (tem_numero(arg, &argn)) {
-    mem_insere(argn);
-  } else {
-    // não é número, põe um 0 e insere uma referência para alterar depois
-    ref_nova(arg, linha, mem_pos);
-    mem_insere(0);
-  }
-}
 
-void monta_linha(int linha, char *label, char *instrucao, char *arg)
-{
-  int num_instr = instr_opcode(instrucao);
-  // pseudo-instrução DEFINE tem que ser tratada antes, porque não pode
-  //   definir o label de forma normal
-  if (num_instr == DEFINE) {
-    int argn;  // para conter o valor numérico do argumento
-    if (label == NULL) {
-      fprintf(stderr, "ERRO: linha %d: 'DEFINE' exige um label\n",
-                      linha);
-    } else if (!tem_numero(arg, &argn)) {
-      fprintf(stderr, "ERRO: linha %d 'DEFINE' exige valor numérico\n",
-              linha);
+    /**
+     * Cria símbolo correspondente ao label, se for o caso
+     */
+    if (label != null) {
+      this.simboloNovo(label, this.memoria.length);
+    }
+
+    /**
+     * Verifica a existência de instrução e número coreto de argumentos
+     */
+    if (instrucao == null) return;
+    if (numeroDaInstrucao == -1) {
+      console.error(
+        "ERRO: linha " + index + ": instrucao '" + instrucao + "' desconhecida"
+      );
+      return;
+    }
+
+    // Verifica se foi defino argumento, mas a instrução não precisa
+    if (this.instrucoes[instrucao] === 0 && argumento != null) {
+      console.error(
+        "ERRO: linha " +
+          index +
+          ": instrucao '" +
+          instrucao +
+          "' não tem argumento\n"
+      );
+      return;
+    }
+
+    // Verifica se a intruçao precisa de argumento, mas não foi definido
+    if (this.instrucoes[instrucao] === 1 && argumento == null) {
+      console.error(
+        "ERRO: linha " +
+          index +
+          ": instrucao '" +
+          instrucao +
+          "' necessita argumento\n"
+      );
+      return;
+    }
+
+    // Monta a instrução
+    this.montaInstrucao(index, numeroDaInstrucao, argumento);
+  }
+
+  // INSTRUÇÂO
+
+  /**
+   * Realiza a montagem de uma instrução (gera o código para ela na memória),
+   * Tendo opcode e argumento
+   * @param {Number} index
+   * @param {Number} opcode
+   * @param {string} arg
+   */
+  montaInstrucao(index, opcode, argumento) {
+    /**
+     * Para conter o valor numérico do argumento
+     * @var {Number} argumentoNumero
+     */
+    let argumentoNumero = this.temNumero(argumento);
+
+    /**
+     * Trata pseudo-opcodes antes
+     */
+    const commands = Object.keys(this.instrucoes);
+    if (opcode === commands.indexOf("ESPACO")) {
+      // Verifica se o argumento é maior que 0
+      if (argumentoNumero === false || argumentoNumero < 1) {
+        console.error(
+          "ERRO: linha " + index + " 'ESPACO' deve ter valor positivo"
+        );
+        return;
+      }
+      // Cria espaços em 0 na memoria
+      for (let i = 0; i < argumentoNumero; i++) {
+        this.memoriaInsere(0);
+      }
+      return;
+    } else if (opcode === commands.indexOf("VALOR")) {
+      // Não faz nada, vai inserir o valor definido em arg
     } else {
-      // tudo OK, define o símbolo
-      simb_novo(label, argn);
+      // Instrução real, coloca o opcode da instrução na memória
+      this.memoriaInsere(opcode);
     }
-    return;
+
+    // Verifica se tem argumento, se não tiver vai para a proxima linha
+    if (this.instrucoes[commands[opcode]] == 0) {
+      return;
+    }
+    argumentoNumero = this.temNumero(argumento);
+    if (argumentoNumero !== false) {
+      // Insere o valor do argumento
+      this.memoriaInsere(argumentoNumero);
+    } else {
+      // Não é número, põe um 0 e insere uma referência para alterar depois
+      this.referenciaNova(argumento, index, this.memoria.length);
+      this.memoriaInsere(0);
+    }
   }
-  
-  // cria símbolo correspondente ao label, se for o caso
-  if (label != NULL) {
-    simb_novo(label, mem_pos);
+
+  /**
+   * Retorna o opcode da instrução atravez do nome dela
+   * @param {string} nome
+   * @returns {number}
+   */
+  instrucaoOpcode(nome) {
+    if (nome == null) return -1;
+    // Pega todos os nomes de instruções
+    const commands = Object.keys(this.instrucoes);
+    if (commands.includes(nome)) {
+      // Retorna o opcode da instrução ( index dentro do array )
+      return commands.indexOf(nome);
+    }
+    return -1;
   }
-  
-  // verifica a existência de instrução e número coreto de argumentos
-  if (instrucao == NULL) return;
-  if (num_instr == -1) {
-    fprintf(stderr, "ERRO: linha %d: instrucao '%s' desconhecida\n",
-                    linha, instrucao);
-    return;
+
+  /**
+   * Retorna true se tem um número na string 'string' (e retorna o número também)
+   * Senão retorna false
+   * @param {string} string
+   * @returns {Number/Boolean}
+   */
+  temNumero(string) {
+    if (this.isNumber(string)) {
+      return parseFloat(string);
+    }
+    return false;
   }
-  if (instrucoes[num_instr].num_args == 0 && arg != NULL) {
-    fprintf(stderr, "ERRO: linha %d: instrucao '%s' não tem argumento\n",
-                    linha, instrucao);
-    return;
+
+  /**
+   * Retorna true se for um numero ou false se não for
+   * @param {Number} string
+   * @returns {Boolean}
+   */
+  isNumber(string) {
+    return !isNaN(parseFloat(string)) && isFinite(string);
   }
-  if (instrucoes[num_instr].num_args == 1 && arg == NULL) {
-    fprintf(stderr, "ERRO: linha %d: instrucao '%s' necessita argumento\n",
-                    linha, instrucao);
-    return;
+
+  // FIM INSTRUÇÂO
+  // SIMBOLOS
+
+  /**
+   * Insere um novo símbolo na tabela
+   * @param {string} nome
+   * @param {Number} endereco
+   * @returns
+   */
+  simboloNovo(nome, endereco) {
+    if (nome == null) return;
+    // Verifica se o simbolo já foi definido
+    if (this.simboloEndereco(nome) != -1) {
+      console.error("ERRO: redefinição do simbolo " + nome);
+      return;
+    }
+    let simbolo = {
+      nome: nome,
+      endereco: endereco,
+    };
+    this.simbolos.push(simbolo);
   }
-  //
-  monta_instrucao(linha, num_instr, arg);
+
+  /**
+   * Retorna o valor de um símbolo, ou -1 se não existir na tabela
+   * @param {string} *nome
+   * @return {Number}
+   */
+  simboloEndereco(nome) {
+    const simbolo = this.simbolos.find((simb) => simb.nome === nome);
+    if (simbolo) {
+      return simbolo.endereco;
+    }
+    return -1;
+  }
+
+  // FIM SIMBOLOS
+  // MEMORIA DE SAIDA
+
+  /**
+   * Coloca um valor no final da memória
+   * @param {Number} valor
+   * @returns
+   */
+  memoriaInsere(valor) {
+    if (valor === null) return;
+    this.memoria.push(valor);
+  }
+
+  /**
+   * Altera o valor em uma posição já ocupada da memória
+   * É usado em referências, seja em endereços da label ou valor do define
+   * @param {Number} posicao
+   * @param {Number} valor
+   * @returns
+   */
+  memoriaAltera(posicao, valor) {
+    this.memoria[posicao] = valor;
+  }
+
+  /**
+   * Imprime o conteúdo da memória no arquivo
+   * @param {string} arquivo
+   * @returns
+   */
+  memoriaImprime(arquivo) {
+    // Texto que vai ser salvo no arquivo
+    let texto = "";
+    // Cada linha do arquivo de saida tem apenas 10 números no máximo
+    for (let i = 0; i < this.memoria.length; i += 10) {
+      let string = "    /* " + i + " */";
+      for (let j = i; j < i + 10 && j < this.memoria.length; j++) {
+        string += " " + this.memoria[j] + ",";
+      }
+      texto += string + "\n";
+    }
+    fs.writeFile(arquivo + ".maq", texto, function (err) {
+      if (err) throw err;
+      console.log("Compilado!");
+    });
+  }
+
+  // FIM MEMORIA DE SAIDA
+  // REFERÊNCIAS
+
+  /**
+   * Insere uma nova referência na tabela
+   * @param {string} nome
+   * @param {Number} index
+   * @param {Number} endereco
+   * @returns
+   */
+  referenciaNova(nome, index, endereco) {
+    if (nome == null) return;
+    let referencia = {
+      nome: nome,
+      linha: index,
+      endereco: endereco,
+    };
+    this.referencias.push(referencia);
+  }
+
+  /**
+   * Resolve as referências -- para cada referência, coloca o valor do símbolo
+   * no endereço onde ele é referenciado
+   * @returns
+   */
+  referenciaResolve() {
+    for (let i = 0; i < this.referencias.length; i++) {
+      const endereco = this.simboloEndereco(this.referencias[i].nome);
+      if (endereco == -1) {
+        console.error(
+          "ERRO: simbolo '" +
+            this.referencias[i].nome +
+            "' referenciado na linha " +
+            this.referencias[i].linha +
+            " não foi definido"
+        );
+      }
+      this.memoriaAltera(this.referencias[i].endereco, endereco);
+    }
+  }
+
+  // FIM REFERÊNCIAS
 }
 
-// retorna true se o caractere for um espaço (ou tab)
-bool espaco(char c)
-{
-  return c == ' ' || c == '\t';
-}
-
-// encontra o primeiro caractere que não seja espaço (ou tab) na string
-char *pula_ate_espaco(char *s)
-{
-  while (!espaco(*s) && *s != '\0') {
-    s++;
-  }
-  return s;
-}
-
-// troca espaços por fim de string
-char *detona_espacos(char *s)
-{
-  while (espaco(*s)) {
-    *s = '\0';
-    s++;
-  }
-  return s;
-}
-
-// faz a string terminar no início de um comentário, se houver
-// aproveita e termina se chegar no fim de linha
-void tira_comentario(char *s)
-{
-  while(*s != '\0' && *s != ';' && *s != '\n') {
-    s++;
-  }
-  *s = '\0';
-}
-
-// uma linha montável é formada por [label][ instrucao[ argumento]]
-// o que está entre [] é opcional
-// as partes são separadas por espaço(s)
-// de ';' em diante, ignora-se (comentário)
-// a string é alterada, colocando-se NULs no lugar dos espaços, para separá-la em substrings
-// quem precisar guardar essas substrings, deve copiá-las.
-void monta_string(int linha, char *str)
-{
-  char *label = NULL;
-  char *instrucao = NULL;
-  char *arg = NULL;
-  tira_comentario(str);
-  if (*str == '\0') return;
-  if (!espaco(*str)) {
-    label = str;
-    str = pula_ate_espaco(str);
-  }
-  str = detona_espacos(str);
-  if (*str != '\0') {
-    instrucao = str;
-    str = pula_ate_espaco(str);
-  }
-  str = detona_espacos(str);
-  if (*str != '\0') {
-    arg = str;
-    str = pula_ate_espaco(str);
-  }
-  str = detona_espacos(str);
-  if (*str != '\0') {
-    fprintf(stderr, "linha %d: ignorando '%s'\n", linha, str);
-  }
-  if (label != NULL || instrucao != NULL) {
-    monta_linha(linha, label, instrucao, arg);
-  }
-}
-
-void monta_arquivo(char *nome)
-{
-  int linha = 1;
-  FILE *arq;
-  arq = fopen(nome, "r");
-  if (arq == NULL) {
-    fprintf(stderr, "Não foi possível abrir o arquivo '%s'\n", nome);
-    return;
-  }
-  while (true) {
-    char lin[500];
-    if (fgets(lin, 500, arq) == NULL) break;
-    int n = strlen(lin) - 1;
-    if (lin[n] == '\n') lin[n] = '\0';
-    monta_string(linha, lin);
-    linha++;
-  }
-  fclose(arq);
-  ref_resolve();
-}
-
-int main(int argc, char *argv[argc])
-{
-  if (argc != 2) {
-    fprintf(stderr, "ERRO: chame como '%s nome_do_arquivo'\n", argv[0]);
-    return 1;
-  }
-  monta_arquivo(argv[1]);
-  mem_imprime();
-  return 0;
-}
+export default Montador;
