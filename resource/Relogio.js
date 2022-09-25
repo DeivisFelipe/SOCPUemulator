@@ -1,3 +1,5 @@
+import Erro from "./Erro";
+
 /**
  * Dispositivo Relógio
  * Simulador do relógio
