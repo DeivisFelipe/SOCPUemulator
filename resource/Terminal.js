@@ -1,4 +1,4 @@
-import Erro from "./Erro";
+import Erro from "../core/Erro.js";
 var readline = require("readline");
 
 // TODO: implementar suporte a múltiplos terminais

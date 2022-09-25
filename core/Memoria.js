@@ -1,4 +1,4 @@
-import Erro from "./Erro";
+import Erro from "./Erro.js";
 
 /**
  * Simulador da memória principal

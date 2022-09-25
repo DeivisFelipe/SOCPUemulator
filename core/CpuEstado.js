@@ -1,4 +1,4 @@
-import Erro from "./Erro";
+import Erro from "./Erro.js";
 
 // TAD para manter o estado interno da CPU (valores dos registradores, modo de execução, etc)
 class CpuEstado {

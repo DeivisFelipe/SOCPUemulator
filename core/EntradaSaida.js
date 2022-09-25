@@ -1,4 +1,4 @@
-import Erro from "./Erro";
+import Erro from "./Erro.js";
 
 const MAXIMO_DISPOSITIVOS = 10; // Número máximo de dispositivos suportados
 

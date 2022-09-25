@@ -1,5 +1,5 @@
 import Montador from "./Montador.js";
-import CpuEstado from "./CpuEstado.js";
+import CpuEstado from "./core/CpuEstado.js";
 
 const arquivo = "ex1";
 function main() {
