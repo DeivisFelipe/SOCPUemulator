@@ -1,3 +1,5 @@
+import Erro from "./Erro";
+
 /**
  * Simulador da memória principal
  * É um vetor de inteiros
@@ -7,14 +9,24 @@ class Memoria {
    * Contrustutor
    */
   constructor(tamanho) {
+    /**
+     * Tamanho da memoria
+     * @var {Number} tamanho
+     */
     this.tamanho = tamanho;
+
+    /**
+     * Array com o conteudo da memoria
+     * Tipo {Number}
+     */
+    this.conteudo = [];
   }
 
   /**
    * Retorna o tamanho da memoria
    * @returns {Number}
    */
-  memoriaTamanho() {
+  tamanho() {
     return this.tamanho;
   }
 
@@ -23,11 +35,11 @@ class Memoria {
    * @param {Number} endereco
    * @return ErroType
    */
-  verificaPermissao(endereco) {
+  permissao(endereco) {
     if (endereco < 0 || endereco >= this.tamanho) {
-      return "ERR_END_INV";
+      return new Erro("ERR_END_INV");
     }
-    return "ERR_OK";
+    return new Erro("ERR_OK");
   }
 
   /**
@@ -35,9 +47,10 @@ class Memoria {
    * @param {Number} endereco
    * @return {Object|Number}
    */
-  memoriaLe(endereco) {
-    let erro = verif_permissao(endereco);
-    if (erro === "ERR_OK") {
+  le(endereco) {
+    /** @var {Erro} erro */
+    let erro = this.permissao(endereco);
+    if (erro.valor === "ERR_OK") {
       return this.conteudo[endereco];
     }
     return erro;
@@ -49,9 +62,9 @@ class Memoria {
    * @param {Number} valor
    * @return {Object|Number}
    */
-  memoriaEscreve(endereco, valor) {
-    let erro = verif_permissao(endereco);
-    if (erro === "ERR_OK") {
+  escreve(endereco, valor) {
+    let erro = this.permissao(endereco);
+    if (erro.valor === "ERR_OK") {
       this.conteudo[endereco] = valor;
     }
     return erro;

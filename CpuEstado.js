@@ -1,3 +1,5 @@
+import Erro from "./Erro";
+
 // TAD para manter o estado interno da CPU (valores dos registradores, modo de execução, etc)
 class CpuEstado {
   /**
@@ -7,15 +9,15 @@ class CpuEstado {
     this.PC = 0;
     this.A = 0;
     this.X = 0;
-    this.erro = "ERR_OK";
+    this.erro = new Erro("ERR_OK");
     this.complemento = 0;
   }
 
   /**
    * Copia um descritor de estado para outro
-   * @return void
+   * @returns
    * */
-  cpuEstadoCopia() {
+  copia() {
     let novaCpuEstado = new CpuEstado();
     novaCpuEstado.PC = this.PC;
     novaCpuEstado.A = this.A;
@@ -27,79 +29,79 @@ class CpuEstado {
 
   /**
    * Retorna o valor do contador de programa
-   * @return int
+   * @returns {Number}
    * */
-  cpuEstadoPC() {
+  pegaPC() {
     return this.PC;
   }
 
   /**
    * Retorna o valor do registrador 'A'
-   * @return int
+   * @returns {Number}
    * */
-  cpuEstadoA() {
+  pegaA() {
     return this.A;
   }
 
   /**
    * Retorna o valor do registrador 'X'
-   * @return int
+   * @returns {Number}
    * */
-  cpuEstadoX() {
+  pegaX() {
     return this.X;
   }
 
   /**
    * Retorna o valor do erro interno da CPU
-   * @return int
+   * @returns {Erro}
    * */
-  cpuEstadoErro() {
+  pegaErro() {
     return this.erro;
   }
 
   /**
    * Retorna o valor do complemento do erro (por exemplo, o endereço em que ocorreu um erro
    * de acesso à memória
-   * @return int
+   * @returns {Number}
    * */
-  cpuEstadoComplemento() {
+  pegaComplemento() {
     return this.complemento;
   }
 
   /**
    * Altera o valor do registrador PC
-   * @param int valor
-   * @return int
+   * @param {Number} valor
+   * @returns
    * */
-  cpuEstadoMudaPC(valor) {
+  mudaPC(valor) {
     this.PC = valor;
   }
 
   /**
    * Altera o valor do registrador A
-   * @param int valor
-   * @return void
+   * @param {Number} valor
+   * @returns
    * */
-  cpuEstadoMudaA(valor) {
+  mudaA(valor) {
     this.A = valor;
   }
 
   /**
    * Altera o valor do registrador X
-   * @param int valor
-   * @return void
+   * @param {Number} valor
+   * @returns
    * */
-  cpuEstadoMudaA(valor) {
+  mudaA(valor) {
     this.X = valor;
   }
 
   /**
    * Altera o valor do erro e do complemento
-   * @param ErrTipo erro
-   * @param int complemento
-   * @return void
+   * @param {Erro} erro
+   * @param {Number} complemento
+   * @returns
    * */
-  cpuEstadoMudaErro(erro, complemento) {
+  mudaErro(erro, complemento) {
     this.erro = erro;
     this.complemento = complemento;
   }
