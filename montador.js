@@ -464,10 +464,8 @@ class Montador {
       }
       texto += string + "\n";
     }
-    fs.writeFile("./bin/" + arquivo + ".maq", texto, function (err) {
-      if (err) throw err;
-      console.log("Compilado!");
-    });
+    fs.writeFileSync("./bin/" + arquivo + ".maq", texto);
+    console.log("Compilado!");
   }
 
   // FIM MEMORIA DE SAIDA

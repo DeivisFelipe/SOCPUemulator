@@ -59,6 +59,7 @@ class EntradaSaida {
   verificaAcesso(dispositivo, tipo) {
     if (dispositivo < 0 || dispositivo >= MAXIMO_DISPOSITIVOS)
       return new Erro("ERR_END_INV");
+
     if (tipo === "leitura" && this.dispositivos[dispositivo].le === null) {
       return new Erro("ERR_OP_INV");
     }
@@ -79,7 +80,7 @@ class EntradaSaida {
    * */
   le(dispositivo, pvalor) {
     /** @var {Erro} erro */
-    let erro = this.verificaAcesso(dispositivo, leitura);
+    let erro = this.verificaAcesso(dispositivo, "leitura");
     if (erro.valor !== "ERR_OK") return erro;
     let controle = this.dispositivos[dispositivo].controle;
     let id = this.dispositivos[dispositivo].id;
@@ -97,7 +98,7 @@ class EntradaSaida {
    * */
   escreve(dispositivo, valor) {
     /** @var {Erro} erro */
-    let erro = this.verificaAcesso(dispositivo, escrita);
+    let erro = this.verificaAcesso(dispositivo, "escrita");
     if (erro.valor !== "ERR_OK") return erro;
     let controle = this.dispositivos[dispositivo].controle;
     let id = this.dispositivos[dispositivo].id;

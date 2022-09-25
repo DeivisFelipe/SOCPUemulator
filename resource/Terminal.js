@@ -1,5 +1,5 @@
 import Erro from "../core/Erro.js";
-var readline = require("readline");
+import readline from "readline";
 
 // TODO: implementar suporte a múltiplos terminais
 
@@ -19,7 +19,7 @@ class Terminal {
    * Funções para implementar o protocolo de acesso a um dispositivo pelo
    * controlador de E/S
    * @param {Number} id
-   * @param {Object} *ObjetoValor
+   * @param {Object} ObjetoValor
    * @returns {Erro}
    */
   le(id, ObjetoValor) {
@@ -40,11 +40,11 @@ class Terminal {
   /**
    * Escreve um valor na tela
    * @param {Number} id
-   * @param {Object} *ObjetoValor
+   * @param {Number} valor
    * @returns {Erro}
    */
-  escreve(id, ObjetoValor) {
-    console.log("[SAÍDA: " + ObjetoValor.valor + " ]");
+  escreve(id, valor) {
+    console.log("[SAÍDA: " + valor + " ]");
     return new Erro("ERR_OK");
   }
 }

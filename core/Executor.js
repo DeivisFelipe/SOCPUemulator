@@ -1,5 +1,5 @@
 import CpuEstado from "./CpuEstado.js";
-import EntradaSaida from "./EntradaSaida.js";
+import { EntradaSaida } from "./EntradaSaida.js";
 import Memoria from "./Memoria.js";
 
 // Simulador do executor de instruções de uma CPU
@@ -14,8 +14,8 @@ class Executor {
   /**
    * Construtor
    * lê um inteiro de um dispositivo
-   * @param {Memoria} *memoria
-   * @param {EntradaSaida} *entradaSaida
+   * @param {Memoria} memoria
+   * @param {EntradaSaida} entradaSaida
    * @return
    * */
   constructor(memoria, entradaSaida) {
@@ -56,7 +56,7 @@ class Executor {
 
   /**
    * O CpuEstado faz uma copia do CpuEstado do executor
-   * @param {CpuEstado} *estado
+   * @param {CpuEstado} estado
    * @return
    * */
   copiaEstadoCpuEstado(estado) {
@@ -65,8 +65,8 @@ class Executor {
 
   /**
    * Faz a copia de uma CpuEstado para a CpuEstado do executor
-   * @param cpu_estado_t *estado
-   * @return void
+   * @param {CpuEstado} estado
+   * @return
    * */
   alteraEstado(estado) {
     this.cpuEstado = estado.copia();
@@ -78,8 +78,8 @@ class Executor {
 
   /**
    * Lê um valor da memória
-   * @param int endereco
-   * @param {Object} *ObjetoValor
+   * @param {Number} endereco
+   * @param {Object} ObjetoValor
    * @return bool
    * */
   pegaMemoria(endereco, ObjetoValor) {
@@ -94,7 +94,7 @@ class Executor {
   /**
    * lê o opcode da instrução no PC
    * @param {Object} ObjetoValor
-   * @return bool
+   * @return {Boolean}
    * */
   pegaOpcode(ObjetoValor) {
     return this.pegaMemoria(this.cpuEstado.pegaPC(), ObjetoValor);
@@ -143,7 +143,7 @@ class Executor {
   /**
    * Lê um valor da E/S
    * @param {Number} dispositivo
-   * @param {Number} ObjetoValor
+   * @param {Object} ObjetoValor
    * @return {Boolean}
    * */
   pegaEntradaSaida(dispositivo, ObjetoValor) {
@@ -158,12 +158,12 @@ class Executor {
   /**
    * Escreve um valor na E/S
    * @param {Number} dispositivo
-   * @param {Number} valor
+   * @param {Object} ObjetoValor
    * @return {Boolean}
    * */
-  poeEntradaSaida(dispositivo, valor) {
+  poeEntradaSaida(dispositivo, ObjetoValor) {
     /** @var {Erro} *erro */
-    let erro = this.entradaSaida.escreve(dispositivo, valor);
+    let erro = this.entradaSaida.escreve(dispositivo, ObjetoValor);
     if (erro.valor !== "ERR_OK") {
       this.cpuEstado.mudaErro(erro, dispositivo);
     }
@@ -175,7 +175,7 @@ class Executor {
 
   /**
    * Escreve um valor na E/S
-   * @return void
+   * @return
    * */
   operacaoNOP() {
     // não faz nada
@@ -184,7 +184,7 @@ class Executor {
 
   /**
    * Para a CPU
-   * @return void
+   * @return
    * */
   operacaoPARA() {
     this.cpuEstado.mudaErro(new Error("ERR_CPU_PARADA"), 0);
@@ -192,13 +192,15 @@ class Executor {
 
   /**
    * Carrega imediato
-   * @return void
+   * @return
    * */
   operacaoCARGI() {
-    /** @var {Object} ObjetoValor */
-    let ObjetoValor;
-    if (this.pegaA1(ObjetoValor)) {
-      this.cpuEstado.mudaA(ObjetoValor.valor);
+    /** @var {Object} ObjetoValorA1 */
+    let ObjetoValorA1 = {
+      valor: null,
+    };
+    if (this.pegaA1(ObjetoValorA1)) {
+      this.cpuEstado.mudaA(ObjetoValorA1.valor);
       this.incrementaPC2();
     }
   }
@@ -210,8 +212,12 @@ class Executor {
   operacaoCARGM() {
     /** @var {Object} ObjetoValorA1 */
     /** @var {Object} ObjetoValorMA1 */
-    let ObjetoValorA1;
-    let ObjetoValorMA1;
+    let ObjetoValorA1 = {
+      valor: null,
+    };
+    let ObjetoValorMA1 = {
+      valor: null,
+    };
     if (
       this.pegaA1(ObjetoValorA1) &&
       this.pegaMemoria(ObjetoValorA1.valor, ObjetoValorMA1)
@@ -228,7 +234,12 @@ class Executor {
   operacaoCARGX() {
     /** @var {Object} ObjetoValorA1 */
     /** @var {Object} ObjetoValorMA1MX */
-    let ObjetoValorA1, ObjetoValorMA1MX;
+    let ObjetoValorA1 = {
+      valor: null,
+    };
+    let ObjetoValorMA1MX = {
+      valor: null,
+    };
     /** @var int X */
     let X = this.cpuEstado.pegaX();
     if (
@@ -246,7 +257,9 @@ class Executor {
    * */
   operacaoARMM() {
     /** @var {Object} ObjetoValorA1 */
-    let ObjetoValorA1;
+    let ObjetoValorA1 = {
+      valor: null,
+    };
     if (
       this.pegaA1(ObjetoValorA1) &&
       this.poeMemoria(ObjetoValorA1.valor, this.cpuEstado.pegaA())
@@ -257,11 +270,13 @@ class Executor {
 
   /**
    * Armazena indexado
-   * @return void
+   * @return
    * */
   operacaoARMX() {
     /** @var {Object} ObjetoValorA1 */
-    let ObjetoValorA1;
+    let ObjetoValorA1 = {
+      valor: null,
+    };
     /** @var int X */
     let X = this.cpuEstado.pegaX();
     if (
@@ -305,9 +320,13 @@ class Executor {
    * */
   operacaoSOMA() {
     /** @var {Object} ObjetoValorA1 */
-    let ObjetoValorA1;
+    let ObjetoValorA1 = {
+      valor: null,
+    };
     /** @var {Object} ObjetoValorMA1 */
-    let ObjetoValorMA1;
+    let ObjetoValorMA1 = {
+      valor: null,
+    };
     if (
       this.pegaA1(ObjetoValorA1) &&
       this.pegaMemoria(ObjetoValorA1.valor, ObjetoValorMA1)
@@ -323,9 +342,13 @@ class Executor {
    * */
   operacaoSUB() {
     /** @var {Object} ObjetoValorA1 */
-    let ObjetoValorA1;
+    let ObjetoValorA1 = {
+      valor: null,
+    };
     /** @var {Object} ObjetoValorMA1 */
-    let ObjetoValorMA1;
+    let ObjetoValorMA1 = {
+      valor: null,
+    };
     if (
       this.pegaA1(ObjetoValorA1) &&
       this.pegaMemoria(ObjetoValorA1.valor, ObjetoValorMA1)
@@ -341,9 +364,13 @@ class Executor {
    * */
   operacaoMULT() {
     /** @var {Object} ObjetoValorA1 */
-    let ObjetoValorA1;
+    let ObjetoValorA1 = {
+      valor: null,
+    };
     /** @var {Object} ObjetoValorMA1 */
-    let ObjetoValorMA1;
+    let ObjetoValorMA1 = {
+      valor: null,
+    };
     if (
       this.pegaA1(ObjetoValorA1) &&
       this.pegaMemoria(ObjetoValorA1.valor, ObjetoValorMA1)
@@ -359,9 +386,13 @@ class Executor {
    * */
   operacaoDIV() {
     /** @var {Object} ObjetoValorA1 */
-    let ObjetoValorA1;
+    let ObjetoValorA1 = {
+      valor: null,
+    };
     /** @var {Object} ObjetoValorMA1 */
-    let ObjetoValorMA1;
+    let ObjetoValorMA1 = {
+      valor: null,
+    };
     if (
       this.pegaA1(ObjetoValorA1) &&
       this.pegaMemoria(ObjetoValorA1.valor, ObjetoValorMA1)
@@ -377,9 +408,13 @@ class Executor {
    * */
   peracaoRESTO() {
     /** @var {Object} ObjetoValorA1 */
-    let ObjetoValorA1;
+    let ObjetoValorA1 = {
+      valor: null,
+    };
     /** @var {Object} ObjetoValorMA1 */
-    let ObjetoValorMA1;
+    let ObjetoValorMA1 = {
+      valor: null,
+    };
     if (
       this.pegaA1(ObjetoValorA1) &&
       this.pegaMemoria(ObjetoValorA1.valor, ObjetoValorMA1)
@@ -404,7 +439,9 @@ class Executor {
    * */
   operacaoDESV() {
     /** @var {Object} ObjetoValorA1 */
-    let ObjetoValorA1;
+    let ObjetoValorA1 = {
+      valor: null,
+    };
     if (this.pegaA1(ObjetoValorA1)) {
       this.cpuEstado.mudaPC(ObjetoValorA1.valor);
     }
@@ -445,7 +482,12 @@ class Executor {
   operacaoLE() {
     /** @var {Object} ObjetoValorA1 */
     /** @var {Object} ObjetoValorDado */
-    let ObjetoValorA1, ObjetoValorDado;
+    let ObjetoValorA1 = {
+      valor: null,
+    };
+    let ObjetoValorDado = {
+      valor: null,
+    };
     if (
       this.pegaA1(ObjetoValorA1) &&
       this.pegaEntradaSaida(ObjetoValorA1.valor, ObjetoValorDado)
@@ -461,7 +503,10 @@ class Executor {
    * */
   operacaoESCR() {
     /** @var {Object} ObjetoValorA1 */
-    let ObjetoValorA1;
+    let ObjetoValorA1 = {
+      valor: null,
+    };
+
     if (
       this.pegaA1(ObjetoValorA1) &&
       this.poeEntradaSaida(ObjetoValorA1.valor, this.cpuEstado.pegaA())
@@ -481,7 +526,9 @@ class Executor {
     }
 
     /** @var {Object} ObjetoValorOpcode */
-    let ObjetoValorOpcode;
+    let ObjetoValorOpcode = {
+      valor: null,
+    };
     if (!this.pegaOpcode(ObjetoValorOpcode)) {
       return this.cpuEstado.pegaErro();
     }
