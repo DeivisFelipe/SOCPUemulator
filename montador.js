@@ -101,7 +101,7 @@ class Montador {
   montaArquivo(arquivo) {
     try {
       const data = fs
-        .readFileSync(arquivo + ".asm", "utf8")
+        .readFileSync("./src/" + arquivo + ".asm", "utf8")
         .split("\n")
         .filter(Boolean);
       // Percorre todas as linhas do arquivo asm
@@ -464,7 +464,7 @@ class Montador {
       }
       texto += string + "\n";
     }
-    fs.writeFile(arquivo + ".maq", texto, function (err) {
+    fs.writeFile("./bin/" + arquivo + ".maq", texto, function (err) {
       if (err) throw err;
       console.log("Compilado!");
     });
