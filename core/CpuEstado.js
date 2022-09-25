@@ -91,7 +91,7 @@ class CpuEstado {
    * @param {Number} valor
    * @returns
    * */
-  mudaA(valor) {
+  mudaX(valor) {
     this.X = valor;
   }
 

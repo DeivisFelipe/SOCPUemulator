@@ -45,13 +45,14 @@ class Memoria {
   /**
    * Le um valor na memoria, caso não encontre retorna um erro
    * @param {Number} endereco
-   * @return {Object|Number}
+   * @param {Object}
+   * @return {Number}
    */
-  le(endereco) {
+  le(endereco, ObjetoValor) {
     /** @var {Erro} erro */
     let erro = this.permissao(endereco);
     if (erro.valor === "ERR_OK") {
-      return this.conteudo[endereco];
+      ObjetoValor.valor = this.conteudo[endereco];
     }
     return erro;
   }
