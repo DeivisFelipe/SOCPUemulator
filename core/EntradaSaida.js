@@ -82,9 +82,8 @@ class EntradaSaida {
     /** @var {Erro} erro */
     let erro = this.verificaAcesso(dispositivo, "leitura");
     if (erro.valor !== "ERR_OK") return erro;
-    let controle = this.dispositivos[dispositivo].controle;
     let id = this.dispositivos[dispositivo].id;
-    return this.dispositivos[dispositivo].le(controle, id, pvalor);
+    return this.dispositivos[dispositivo].le(id, pvalor);
   }
 
   /**
@@ -100,9 +99,8 @@ class EntradaSaida {
     /** @var {Erro} erro */
     let erro = this.verificaAcesso(dispositivo, "escrita");
     if (erro.valor !== "ERR_OK") return erro;
-    let controle = this.dispositivos[dispositivo].controle;
     let id = this.dispositivos[dispositivo].id;
-    return this.dispositivos[dispositivo].escreve(controle, id, valor);
+    return this.dispositivos[dispositivo].escreve(id, valor);
   }
 }
 

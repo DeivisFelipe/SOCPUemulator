@@ -54,8 +54,7 @@ function teste() {
     erro = executor.executa();
     relogio.tictac();
   } while (erro.valor === "ERR_OK");
-
-  console.log("Fim da execução. Estado final:\n");
+  console.log("Fim da execução. Estado final:");
   imprimeEstado(executor);
 }
 
