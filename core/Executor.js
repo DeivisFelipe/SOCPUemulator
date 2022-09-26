@@ -1,6 +1,7 @@
 import CpuEstado from "./CpuEstado.js";
 import { EntradaSaida } from "./EntradaSaida.js";
 import Memoria from "./Memoria.js";
+import Erro from "./Erro.js";
 
 // Simulador do executor de instruções de uma CPU
 // Executa a instrução no PC se possível, ou retorna erro
@@ -187,7 +188,7 @@ class Executor {
    * @return
    * */
   operacaoPARA() {
-    this.cpuEstado.mudaErro(new Error("ERR_CPU_PARADA"), 0);
+    this.cpuEstado.mudaErro(new Erro("ERR_CPU_PARADA"), 0);
   }
 
   /**
@@ -600,7 +601,6 @@ class Executor {
       default:
         this.cpuEstado.mudaErro(new Error("ERR_INSTR_INV"), 0);
     }
-
     return this.cpuEstado.pegaErro();
   }
 }
