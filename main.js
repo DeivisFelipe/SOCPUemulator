@@ -12,10 +12,10 @@ import Relogio from "./resource/Relogio.js";
 
 import fs from "fs";
 
-const arquivo = "ex1";
+const arquivo = "ex2";
 function main() {
-  let monstador = new Montador();
-  monstador.inicia(arquivo);
+  //let monstador = new Montador();
+  //monstador.inicia(arquivo);
   teste();
 }
 
@@ -97,7 +97,10 @@ function imprimeEstado(executor) {
   let cpuEstado = executor.cpuEstado;
   // exec_copia_estado(exec, estado);
   console.log(
-    `PC=${cpuEstado.pegaPC()} A=${cpuEstado.pegaA()} X=${cpuEstado.pegaX()} E=${
+    `PC=${cpuEstado.pegaPC().toString().padStart(4, "0")} A=${cpuEstado
+      .pegaA()
+      .toString()
+      .padStart(6, "0")} X=${cpuEstado.pegaX().toString().padStart(6, "0")} E=${
       cpuEstado.pegaErro().valor
     }`
   );
