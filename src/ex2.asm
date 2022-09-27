@@ -8,15 +8,15 @@ N    DEFINE 10
      MVAX         ; x=0
      CARGI N
      ARMM cont    ; cont=10
-ali  MVXA
+ali  MVXA         ; a = x
      ESCR 0       ; print x
-     LE 1
-     ESCR 0
-     LE 2
-     ESCR 0
+     LE 1         ; le o valor agora do relogio
+     ESCR 0       ; escreve na tela
+     LE 2         ; le o valor do sistema
+     ESCR 0       ; escreve na tela
      INCX         ; x++
-     MVXA
-     SUB cont
+     MVXA         ; a = x
+     SUB cont     ; a = a - cont
      DESVNZ ali   ; if x != cont goto ali
      PARA         ; stop
-cont ESPACO 1
+cont ESPACO 1     ; espaço reservado na memoria para o cont
