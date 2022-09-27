@@ -75,15 +75,16 @@ class EntradaSaida {
    * ERR_END_INV se dispositivo desconhecido
    * ERR_OP_INV se operação inválida
    * @param {Number} dispositivo
-   * @param {Number} *pvalor
+   * @param {Object} ObjetoValor
    * @return {Erro}
    * */
-  le(dispositivo, pvalor) {
+  le(dispositivo, ObjetoValor) {
     /** @var {Erro} erro */
     let erro = this.verificaAcesso(dispositivo, "leitura");
     if (erro.valor !== "ERR_OK") return erro;
     let id = this.dispositivos[dispositivo].id;
-    return this.dispositivos[dispositivo].le(id, pvalor);
+    let controle = this.dispositivos[dispositivo].controle;
+    return this.dispositivos[dispositivo].le(controle, id, ObjetoValor);
   }
 
   /**

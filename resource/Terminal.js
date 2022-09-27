@@ -18,11 +18,12 @@ class Terminal {
   /**
    * Funções para implementar o protocolo de acesso a um dispositivo pelo
    * controlador de E/S
+   * @param {Terminal} controle
    * @param {Number} id
    * @param {Object} ObjetoValor
    * @returns {Erro}
    */
-  le(id, ObjetoValor) {
+  le(controle, id, ObjetoValor) {
     // Quando tiver suporte a múltiplos terminais, 'id' será usado para discriminar qual dos
     // Terminais está sendo acessado, e 'disp' dará acesso ao nosso descritor (term_t).
     // Por enquanto, são ignorados.
