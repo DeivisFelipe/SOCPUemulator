@@ -102,7 +102,8 @@ class Executor {
   }
 
   /**
-   * Pega o valor da memoria do registrador A1
+   * Pega o valor da proxima possição da memoria depois do PC
+   * Representando o A1
    * @param {Object} ObjetoValor
    * @return {Boolean}
    * */
@@ -193,6 +194,8 @@ class Executor {
 
   /**
    * Carrega imediato
+   * Pega o próxima valor depois da intrução do PC e bota dentro do registrador A
+   * ** Testado e funcionando ***
    * @return
    * */
   operacaoCARGI() {
@@ -290,6 +293,8 @@ class Executor {
 
   /**
    * Copia A para X
+   * E aumenta o PC
+   * ** Testado e Funcionando ***
    * @return
    * */
   operacaoMVAX() {
@@ -308,6 +313,7 @@ class Executor {
 
   /**
    * Incrementa X
+   * *** Testado e Funcionando ***
    * @return
    * */
   operacaoINCX() {
@@ -339,6 +345,9 @@ class Executor {
 
   /**
    * Subtração
+   * Pega o proximo valor do PC, que esse valor significa o endereço do dado que sera pega na memoria
+   * Depois muda o valor do registrador A para A - valor carregado da memoria
+   * *** Testado e Funcionando ***
    * @return
    * */
   operacaoSUB() {
