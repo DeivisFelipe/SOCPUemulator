@@ -11,6 +11,7 @@ class Relogio {
    */
   constructor() {
     this.agora = 0;
+    this.milisegundosInicial = Date.now();
   }
 
   /**
@@ -34,19 +35,20 @@ class Relogio {
    * Só tem leitura, e dois dispositivos, '0' para ler o relógio local
    * (contador de instruções) e '1' para ler o relógio de tempo de CPU
    * consumido pelo simulador (em ms)
+   * @param {Relogio} controle
    * @param {Number} id
-   * @param {Object} *ObjetoValor
+   * @param {Object} ObjetoValor
    * @returns {Erro}
    */
-  le(id, ObjetoValor) {
+  le(controle, id, ObjetoValor) {
     let erro = new Erro("ERR_OK");
     switch (id) {
       case 0:
-        ObjetoValor.valor = this.agora;
+        ObjetoValor.valor = controle.pegaAgora();
         break;
       case 1:
         const clock = new Date();
-        ObjetoValor.valor = clock.getTime() / (10000000 / 1000);
+        ObjetoValor.valor = clock.getTime() - controle.milisegundosInicial;
         break;
       default:
         erro.valor = "ERR_END_INV";
