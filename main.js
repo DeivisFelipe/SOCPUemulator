@@ -9,13 +9,14 @@ import Erro from "./core/Erro.js";
 // Dispositivos
 import Terminal from "./resource/Terminal.js";
 import Relogio from "./resource/Relogio.js";
+import Rand from "./resource/Rand.js";
 
 import fs from "fs";
 
-const arquivo = "ex2";
+const arquivo = "ex3";
 function main() {
-  //let monstador = new Montador();
-  //monstador.inicia(arquivo);
+  let monstador = new Montador();
+  monstador.inicia(arquivo);
   teste();
 }
 
@@ -31,6 +32,7 @@ function teste() {
   // cria dispositivos de E/S (o relógio e um terminal)
   let terminal = new Terminal();
   let relogio = new Relogio();
+  let rand = new Rand();
   // cria o controlador de E/S e registra os dispositivos
   let entradaSaida = new EntradaSaida();
 
@@ -43,6 +45,7 @@ function teste() {
   );
   entradaSaida.registraDispositivo(1, relogio, 0, relogio.le, null);
   entradaSaida.registraDispositivo(2, relogio, 1, relogio.le, null);
+  entradaSaida.registraDispositivo(3, rand, 0, rand.le, null);
 
   // cria a unidade de execução e inicializa com a memória e E/S
   let executor = new Executor(memoria, entradaSaida);
