@@ -226,7 +226,7 @@ class Executor {
       this.pegaA1(ObjetoValorA1) &&
       this.pegaMemoria(ObjetoValorA1.valor, ObjetoValorMA1)
     ) {
-      this.cpuEstado.mudaA(ObjetoValorMA1);
+      this.cpuEstado.mudaA(ObjetoValorMA1.valor);
       this.incrementaPC2();
     }
   }
@@ -250,7 +250,7 @@ class Executor {
       this.pegaA1(ObjetoValorA1) &&
       this.pegaMemoria(ObjetoValorA1.valor + X, ObjetoValorMA1MX)
     ) {
-      this.cpuEstado.mudaA(ObjetoValorMA1MX);
+      this.cpuEstado.mudaA(ObjetoValorMA1MX.valor);
       this.incrementaPC2();
     }
   }
