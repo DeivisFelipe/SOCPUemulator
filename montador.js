@@ -230,7 +230,7 @@ class Montador {
       return item.nome === "DEFINE";
     });
 
-    console.log(index, label, instrucao, argumento, numeroDaInstrucao);
+    //console.log(index, label, instrucao, argumento, numeroDaInstrucao);
 
     /**
      * pseudo-instrução DEFINE tem que ser tratada antes, porque não pode

@@ -75,7 +75,7 @@ class Controlador {
     this.conteudo = [];
 
     // cria a memória
-    this.memoria = new Memoria();
+    this.memoria = new Memoria(this.tamanho);
     // cria dispositivos de E/S (o relógio e um terminal)
     this.terminal = new Terminal();
     this.relogio = new Relogio();
@@ -134,9 +134,10 @@ class Controlador {
     // executa uma instrução por vez até CPU acusar erro
     let erro = new Erro();
     do {
+      let texto = this.stringEstado();
+      //console.log(texto);
       erro = this.executor.executa();
       this.relogio.tictac();
-      this.stringEstado();
       //t_atualiza();
     } while (erro.valor === "ERR_OK");
 
@@ -150,7 +151,7 @@ class Controlador {
   stringEstado() {
     // pega o estado da CPU, imprime registradores, opcode, instrução
     /** @var {Estado} cpuEstado */
-    let cpuEstado = this.executor.cpuEstado;
+    let cpuEstado = this.executor.cpuEstado.copia();
     let pc = cpuEstado.PC;
     let opcode = {
       valor: -1,
@@ -159,10 +160,8 @@ class Controlador {
     this.memoria.le(pc, opcode);
 
     let comando = this.instrucoes.find((item) => {
-      return item.opcode === opcode;
+      return item.opcode === opcode.valor;
     });
-
-    console.log(this.memoria);
 
     texto += `PC=${cpuEstado.pegaPC().toString().padStart(4, "0")} A=${cpuEstado
       .pegaA()
@@ -182,8 +181,8 @@ class Controlador {
       texto += " Argumento=" + A1.valor;
     }
     // imprime estado de erro da CPU, se for o caso
-    let erro = cpuEstado;
-    if (erro.valor != "ERR_OK") {
+    let erro = cpuEstado.erro;
+    if (erro.valor !== "ERR_OK") {
       texto +=
         " E=" + erro.valor + " complemento=" + cpuEstado.pegaComplemento();
     }
