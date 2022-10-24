@@ -36,13 +36,22 @@ class EntradaSaida {
    * @param {Number} id
    * @param {Function} funcaoLe
    * @param {Function} funcaoEscreve
+   * @param {Function} funcaoPronto
    * @return {Boolean}
    * */
-  registraDispositivo(dispositivo, controle, id, funcaoLe, funcaoEscreve) {
+  registraDispositivo(
+    dispositivo,
+    controle,
+    id,
+    funcaoLe,
+    funcaoEscreve,
+    funcaoPronto
+  ) {
     if (dispositivo < 0 || dispositivo >= MAXIMO_DISPOSITIVOS) return false;
     let novoDispositivo = {
       le: funcaoLe,
       escreve: funcaoEscreve,
+      pronto: funcaoPronto,
       controle: controle,
       id: id,
     };
@@ -70,6 +79,29 @@ class EntradaSaida {
   }
 
   /**
+   * @param {Number} dispositivo
+   * @param {Object} ObjetoValor
+   * Le dispositivo virtual para estado de prontidão
+   * cada dispositivo i tem dois dispositivos virtuais de leitura:
+   * i+100 que fornece prontidão par leitura (1 ou 0)
+   * i+200 que fornece prontidão par escrita (1 ou 0)
+   */
+  leVirtual(dispositivo, ObjetoValor) {
+    let pronto;
+    if (dispositivo < 200) {
+      // prontidão para leitura
+      pronto = this.pronto(self, dispositivo - 100, "leitura");
+    } else {
+      // prontidão para escrita
+      pronto = this.pronto(self, dispositivo - 200, "escrita");
+    }
+    ObjetoValor = {
+      valor: pronto ? 1 : 0,
+    };
+    return new Erro("ERR_OK");
+  }
+
+  /**
    * Lê um inteiro de um dispositivo
    * Retorna ERR_OK se bem sucedido, ou
    * ERR_END_INV se dispositivo desconhecido
@@ -79,6 +111,10 @@ class EntradaSaida {
    * @return {Erro}
    * */
   le(dispositivo, ObjetoValor) {
+    // se for dispositivo "virtual", passa adiante
+    if (dispositivo >= 100) return this.leVirtual(dispositivo, ObjetoValor);
+
+    // dispositivo normal
     /** @var {Erro} erro */
     let erro = this.verificaAcesso(dispositivo, "leitura");
     if (erro.valor !== "ERR_OK") return erro;
@@ -92,6 +128,12 @@ class EntradaSaida {
    * Retorna ERR_OK se bem sucedido, ou
    * ERR_END_INV se dispositivo desconhecido
    * ERR_OP_INV se operação inválida
+   * ERR_OCUP se dispositivo não estiver disponível
+   * a identificação do dispositivo é a que foi registrada, ou pode ser um
+   * id virtual (>=100), que disponibiliza a prontidão de um dispositivo:
+   * - lendo de um id>=100, se está lendo o estado de prontidão (1=pronto) para leitura do dispositivo id-100
+   * - lendo de um id>=200, se está lendo o estado de prontidão para escrita do dispositivo id-200
+   * (gambiarras acontecem...)
    * @param {Number} dispositivo
    * @param {Number} valor
    * @return {Erro}
@@ -102,6 +144,24 @@ class EntradaSaida {
     if (erro.valor !== "ERR_OK") return erro;
     let id = this.dispositivos[dispositivo].id;
     return this.dispositivos[dispositivo].escreve(id, valor);
+  }
+
+  /**
+   * Retorna true se for possível realizar o acesso indicado
+   * @param {Number} dispositivo
+   * @param {String} tipoAcesso
+   * @returns {Boolean}
+   */
+  pronto(dispositivo, tipoAcesso) {
+    // se não for possível esse tipo de acesso, não está pronto
+    let erro = this.verificaAcesso(dispositivo, tipoAcesso);
+    if (erro.valor !== "ERR_OK") return false;
+    // se não houver função de pronto, está sempre pronto
+    if (this.dispositivos[dispositivo].pronto === null) return true;
+    // pergunta ao dispositivo
+    let controler = this.dispositivos[dispositivo].controle;
+    let id = this.dispositivos[dispositivo].id;
+    return controler.dispositivos[dispositivo].pronto(id, tipoAcesso);
   }
 }
 

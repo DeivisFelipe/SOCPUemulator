@@ -463,8 +463,8 @@ class Executor {
    * */
   operacaoDESVZ() {
     /** @var {Number} a1 */
-    let a1 = this.cpuEstado.pegaA();
-    if (a1 === 0) {
+    let a = this.cpuEstado.pegaA();
+    if (a === 0) {
       this.operacaoDESV();
     } else {
       this.incrementaPC2();
@@ -477,11 +477,79 @@ class Executor {
    * */
   operacaoDESVNZ() {
     /** @var {Number} a1 */
-    let a1 = this.cpuEstado.pegaA();
-    if (a1 !== 0) {
+    let a = this.cpuEstado.pegaA();
+    if (a !== 0) {
       this.operacaoDESV();
     } else {
       this.incrementaPC2();
+    }
+  }
+
+  /**
+   * Desvio condicional
+   * @return
+   */
+  operacaoDESVN() {
+    /** @var {Number} a1 */
+    let a = this.cpuEstado.pegaA();
+    if (a < 0) {
+      this.operacaoDESV();
+    } else {
+      this.incrementaPC2();
+    }
+  }
+
+  /**
+   * Desvio condicional
+   * @return
+   */
+  operacaoDESVP() {
+    /** @var {Number} a1 */
+    let a = this.cpuEstado.pegaA();
+    if (a > 0) {
+      this.operacaoDESV();
+    } else {
+      this.incrementaPC2();
+    }
+  }
+
+  /**
+   * Chamada de subrotina
+   * @return
+   */
+  operacaoCHAMA() {
+    /** @var {Object} ObjetoValorA1 */
+    let ObjetoValorA1 = {
+      valor: null,
+    };
+    /** @var {Number} PC */
+    let PC = this.cpuEstado.pegaPC();
+    if (
+      this.pegaA1(ObjetoValorA1) &&
+      this.poeMemoria(ObjetoValorA1.valor, PC + 2)
+    ) {
+      this.cpuEstado.mudaPC(ObjetoValorA1.valor + 1);
+    }
+  }
+
+  /**
+   * Retorno de subrotina
+   * @return
+   */
+  operacaoRET() {
+    /** @var {Object} ObjetoValorA1 */
+    /** @var {Object} ObjetoValorMA1 */
+    let ObjetoValorA1 = {
+      valor: null,
+    };
+    let ObjetoValorMA1 = {
+      valor: null,
+    };
+    if (
+      this.pegaA1(ObjetoValorA1) &&
+      this.pegaMemoria(ObjetoValorA1.valor, ObjetoValorMA1)
+    ) {
+      this.cpuEstado.mudaPC(mA1.valor);
     }
   }
 
@@ -600,6 +668,18 @@ class Executor {
         break;
       case "DESVNZ":
         this.operacaoDESVNZ();
+        break;
+      case "DESVN":
+        this.operacaoDESVN();
+        break;
+      case "DESVP":
+        this.operacaoDESVP();
+        break;
+      case "CHAMA":
+        this.operacaoCHAMA();
+        break;
+      case "RET":
+        this.operacaoRET();
         break;
       case "LE":
         this.operacaoLE();

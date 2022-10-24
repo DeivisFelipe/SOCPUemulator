@@ -13,8 +13,8 @@ i_leit  MVXA         ; while x != cont
         ARMX vet
         INCX         ;   x++
         DESV i_leit  ; fim while
-f_leit
-        CARGM cont   ; x=cont
+
+f_leit  CARGM cont   ; x=cont
         MVAX
 i_escr  MVXA         ; while x > 0
         DESVP m_escr
@@ -23,8 +23,8 @@ m_escr  CHAMA decx   ;   x--
         CARGX vet    ;   escreve vet[x]
         ESCR video
         DESV i_escr  ; fim while
-f_escr
-        PARA         ; stop
+        
+f_escr  PARA         ; stop
 
 decx    ESPACO 1     ; subrotina para decrementar o X
         MVXA

@@ -29,33 +29,37 @@ class Montador {
      * posição atual da memória) -- ainda não implementado
      * @var {Object} instrucoes
      */
-    this.instrucoes = {
-      NOP: 0,
-      PARA: 0,
-      CARGI: 1,
-      CARGM: 1,
-      CARGX: 1,
-      ARMM: 1,
-      ARMX: 1,
-      MVAX: 0,
-      MVXA: 0,
-      INCX: 0,
-      SOMA: 1,
-      SUB: 1,
-      MULT: 1,
-      DIV: 1,
-      RESTO: 1,
-      NEG: 0,
-      DESV: 1,
-      DESVZ: 1,
-      DESVNZ: 1,
-      LE: 1,
-      ESCR: 1,
-      // Pseudo-instrucoes
-      VALOR: 1,
-      ESPACO: 1,
-      DEFINE: 1,
-    };
+    this.instrucoes = [
+      { nome: "NOP", numeroArgumentos: 0, opcode: 0 },
+      { nome: "PARA", numeroArgumentos: 0, opcode: 1 },
+      { nome: "CARGI", numeroArgumentos: 1, opcode: 2 },
+      { nome: "CARGM", numeroArgumentos: 1, opcode: 3 },
+      { nome: "CARGX", numeroArgumentos: 1, opcode: 4 },
+      { nome: "ARMM", numeroArgumentos: 1, opcode: 5 },
+      { nome: "ARMX", numeroArgumentos: 1, opcode: 6 },
+      { nome: "MVAX", numeroArgumentos: 0, opcode: 7 },
+      { nome: "MVXA", numeroArgumentos: 0, opcode: 8 },
+      { nome: "INCX", numeroArgumentos: 0, opcode: 9 },
+      { nome: "SOMA", numeroArgumentos: 1, opcode: 10 },
+      { nome: "SUB", numeroArgumentos: 1, opcode: 11 },
+      { nome: "MULT", numeroArgumentos: 1, opcode: 12 },
+      { nome: "DIV", numeroArgumentos: 1, opcode: 13 },
+      { nome: "RESTO", numeroArgumentos: 1, opcode: 14 },
+      { nome: "NEG", numeroArgumentos: 0, opcode: 15 },
+      { nome: "DESV", numeroArgumentos: 1, opcode: 16 },
+      { nome: "DESVZ", numeroArgumentos: 1, opcode: 17 },
+      { nome: "DESVNZ", numeroArgumentos: 1, opcode: 18 },
+      { nome: "DESVN", numeroArgumentos: 1, opcode: 19 },
+      { nome: "DESVP", numeroArgumentos: 1, opcode: 20 },
+      { nome: "CHAMA", numeroArgumentos: 1, opcode: 21 },
+      { nome: "RET", numeroArgumentos: 1, opcode: 22 },
+      { nome: "LE", numeroArgumentos: 1, opcode: 23 },
+      { nome: "ESCR", numeroArgumentos: 1, opcode: 24 },
+      // pseudo-instrucoes
+      { nome: "VALOR", numeroArgumentos: 1, opcode: 25 },
+      { nome: "ESPACO", numeroArgumentos: 1, opcode: 26 },
+      { nome: "DEFINE", numeroArgumentos: 1, opcode: 27 },
+    ];
 
     /**
      * Tabela com os símbolos (labels) já definidos pelo programa, e o valor (endereço) deles
@@ -77,7 +81,7 @@ class Montador {
      * {
      *    nome: nome,
      *    linha: index,
-     *    endereco: endereco,
+     *    valor: valor,
      * }
      * @var {array} referencias
      */
@@ -221,13 +225,19 @@ class Montador {
      */
     let numeroDaInstrucao = this.instrucaoOpcode(instrucao);
 
+    // Verifica se foi defino argumento, mas a instrução não precisa
+    let comando = this.instrucoes.find((item) => {
+      return item.nome === "DEFINE";
+    });
+
+    console.log(index, label, instrucao, argumento, numeroDaInstrucao);
+
     /**
      * pseudo-instrução DEFINE tem que ser tratada antes, porque não pode
      * definir o label de forma normal
      */
-    // Pega os nomes das instruções
-    const commands = Object.keys(this.instrucoes);
-    if (numeroDaInstrucao === commands.indexOf("DEFINE")) {
+    // Pega os nomes das instruçõe
+    if (numeroDaInstrucao === comando.opcode) {
       /**
        * Para conter o valor numérico do argumento
        * @var {Number} argumentoNumero
@@ -268,7 +278,10 @@ class Montador {
     }
 
     // Verifica se foi defino argumento, mas a instrução não precisa
-    if (this.instrucoes[instrucao] === 0 && argumento != null) {
+    comando = this.instrucoes.find((item) => {
+      return item.nome === instrucao;
+    });
+    if (comando.numeroArgumentos === 0 && argumento != null) {
       console.error(
         "ERRO: linha " +
           index +
@@ -280,7 +293,7 @@ class Montador {
     }
 
     // Verifica se a intruçao precisa de argumento, mas não foi definido
-    if (this.instrucoes[instrucao] === 1 && argumento == null) {
+    if (comando.numeroArgumentos === 1 && argumento == null) {
       console.error(
         "ERRO: linha " +
           index +
@@ -299,7 +312,7 @@ class Montador {
 
   /**
    * Realiza a montagem de uma instrução (gera o código para ela na memória),
-   * Tendo opcode e argumento
+   * Tendo opcode da instrução e o argumento
    * @param {Number} index
    * @param {Number} opcode
    * @param {string} arg
@@ -314,10 +327,16 @@ class Montador {
     /**
      * Trata pseudo-opcodes antes
      */
-    const commands = Object.keys(this.instrucoes);
+    const commands = this.instrucoes.map((item) => {
+      return item.nome;
+    });
+
     if (opcode === commands.indexOf("ESPACO")) {
       // Verifica se o argumento é maior que 0
-      if (argumentoNumero === false || argumentoNumero < 1) {
+      if (argumentoNumero === false) {
+        argumentoNumero = this.simboloValor(argumento);
+      }
+      if (argumentoNumero < 1) {
         console.error(
           "ERRO: linha " + index + " 'ESPACO' deve ter valor positivo"
         );
@@ -336,7 +355,10 @@ class Montador {
     }
 
     // Verifica se tem argumento, se não tiver vai para a proxima linha
-    if (this.instrucoes[commands[opcode]] == 0) {
+    let comando = this.instrucoes.find((item) => {
+      return item.opcode === opcode;
+    });
+    if (comando.numeroArgumentos == 0) {
       return;
     }
     argumentoNumero = this.temNumero(argumento);
@@ -358,7 +380,9 @@ class Montador {
   instrucaoOpcode(nome) {
     if (nome == null) return -1;
     // Pega todos os nomes de instruções
-    const commands = Object.keys(this.instrucoes);
+    const commands = this.instrucoes.map((item) => {
+      return item.nome;
+    });
     if (commands.includes(nome)) {
       // Retorna o opcode da instrução ( index dentro do array )
       return commands.indexOf(nome);
@@ -394,19 +418,19 @@ class Montador {
   /**
    * Insere um novo símbolo na tabela
    * @param {string} nome
-   * @param {Number} endereco
+   * @param {Number} valor
    * @returns
    */
-  simboloNovo(nome, endereco) {
+  simboloNovo(nome, valor) {
     if (nome == null) return;
     // Verifica se o simbolo já foi definido
-    if (this.simboloEndereco(nome) != -1) {
+    if (this.simboloValor(nome) != -1) {
       console.error("ERRO: redefinição do simbolo " + nome);
       return;
     }
     let simbolo = {
       nome: nome,
-      endereco: endereco,
+      valor: valor,
     };
     this.simbolos.push(simbolo);
   }
@@ -416,10 +440,10 @@ class Montador {
    * @param {string} *nome
    * @return {Number}
    */
-  simboloEndereco(nome) {
+  simboloValor(nome) {
     const simbolo = this.simbolos.find((simb) => simb.nome === nome);
     if (simbolo) {
-      return simbolo.endereco;
+      return simbolo.valor;
     }
     return -1;
   }
@@ -475,15 +499,15 @@ class Montador {
    * Insere uma nova referência na tabela
    * @param {string} nome
    * @param {Number} index
-   * @param {Number} endereco
+   * @param {Number} valor
    * @returns
    */
-  referenciaNova(nome, index, endereco) {
+  referenciaNova(nome, index, valor) {
     if (nome == null) return;
     let referencia = {
       nome: nome,
       linha: index,
-      endereco: endereco,
+      valor: valor,
     };
     this.referencias.push(referencia);
   }
@@ -494,9 +518,11 @@ class Montador {
    * @returns
    */
   referenciaResolve() {
+    //console.log(this.referencias);
     for (let i = 0; i < this.referencias.length; i++) {
-      const endereco = this.simboloEndereco(this.referencias[i].nome);
-      if (endereco == -1) {
+      const valor = this.simboloValor(this.referencias[i].nome);
+      //console.log(valor);
+      if (valor == -1) {
         console.error(
           "ERRO: simbolo '" +
             this.referencias[i].nome +
@@ -505,7 +531,7 @@ class Montador {
             " não foi definido"
         );
       }
-      this.memoriaAltera(this.referencias[i].endereco, endereco);
+      this.memoriaAltera(this.referencias[i].valor, valor);
     }
   }
 

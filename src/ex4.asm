@@ -9,14 +9,13 @@ TELAPL DEFINE 100
 TELAPE DEFINE 200
        CARGI 0
        MVAX         ; x=0
-ali
-esperatela
-       LE TELAPL
+
+esperatela  LE TELAPL
        DESVZ naole
        LE TELA
        MVAX
-naole
-       LE TELAPE
+       
+naole  LE TELAPE
        DESVZ esperatela
        MVXA
        ESCR TELA    ; print x
@@ -24,6 +23,6 @@ naole
        INCX         ; x++
        MVXA
        SUB cont
-       DESVNZ ali   ; if x != cont goto ali
+       DESVNZ esperatela   ; if x != cont goto ali
        PARA         ; stop
 cont   VALOR 10     ; int cont=10
