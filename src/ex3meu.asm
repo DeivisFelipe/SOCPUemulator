@@ -1,7 +1,7 @@
      CARGI 0  ; a = 0
      MVAX     ; x = a
 
-for  LE 2  ; a = rand()
+for  LE 3  ; a = rand()
      ESCR 0 ; print(a)
 
      INCX ; X++
