@@ -10,9 +10,9 @@ N    DEFINE 10
      ARMM cont    ; cont=10
 ali  MVXA         ; a = x
      ESCR 0       ; print x
-     LE 1         ; le o valor agora do relogio
+     LE 2         ; le o valor agora do relogio
      ESCR 0       ; escreve na tela
-     LE 2         ; le o valor do sistema
+     LE 3         ; le o valor do sistema
      ESCR 0       ; escreve na tela
      INCX         ; x++
      MVXA         ; a = x

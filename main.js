@@ -5,7 +5,7 @@ import Controlador from "./core/Controlador.js";
 // System
 import So from "./system/So.js";
 
-const arquivo = "ex3meu";
+const arquivo = "ex2";
 function main() {
   let monstador = new Montador();
   monstador.inicia(arquivo);

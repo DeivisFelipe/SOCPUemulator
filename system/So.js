@@ -14,15 +14,15 @@ import fs from "fs";
 class So {
   /**
    * Contrustutor
-   * @param {Controle} controle
+   * @param {Controlador} controlador
    * @param {String} arquivo
    */
-  constructor(controle, arquivo) {
+  constructor(controlador, arquivo) {
     /**
      * Controle
      * @var {Controle} controle
      */
-    this.controle = controle;
+    this.controlador = controlador;
 
     this.paniquei = false;
 
@@ -61,7 +61,7 @@ class So {
       .filter(Boolean);
 
     // cria a memória
-    let memoria = this.controle.memoria;
+    let memoria = this.controlador.memoria;
 
     let instrucoes = [];
     // Percorre todas as linhas do arquivo asm

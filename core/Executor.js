@@ -619,7 +619,6 @@ class Executor {
     let comando = this.instrucoes.find((item) => {
       return item.opcode === ObjetoValorOpcode.valor;
     });
-
     switch (comando.nome) {
       case "NOP":
         this.operacaoNOP();
