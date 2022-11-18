@@ -27,31 +27,36 @@ class Executor {
     this.entradaSaida = entradaSaida;
 
     /**
-     * array de instruções
-     * @var {Array} instrucoes
+     * Instruções
+     * O número representa a quantidade de parametros que a instrução tem
+     * @var {Object} instrucoes
      */
     this.instrucoes = [
-      "NOP",
-      "PARA",
-      "CARGI",
-      "CARGM",
-      "CARGX",
-      "ARMM",
-      "ARMX",
-      "MVAX",
-      "MVXA",
-      "INCX",
-      "SOMA",
-      "SUB",
-      "MULT",
-      "DIV",
-      "RESTO",
-      "NEG",
-      "DESV",
-      "DESVZ",
-      "DESVNZ",
-      "LE",
-      "ESCR",
+      { nome: "NOP", numeroArgumentos: 0, opcode: 0 },
+      { nome: "PARA", numeroArgumentos: 0, opcode: 1 },
+      { nome: "CARGI", numeroArgumentos: 1, opcode: 2 },
+      { nome: "CARGM", numeroArgumentos: 1, opcode: 3 },
+      { nome: "CARGX", numeroArgumentos: 1, opcode: 4 },
+      { nome: "ARMM", numeroArgumentos: 1, opcode: 5 },
+      { nome: "ARMX", numeroArgumentos: 1, opcode: 6 },
+      { nome: "MVAX", numeroArgumentos: 0, opcode: 7 },
+      { nome: "MVXA", numeroArgumentos: 0, opcode: 8 },
+      { nome: "INCX", numeroArgumentos: 0, opcode: 9 },
+      { nome: "SOMA", numeroArgumentos: 1, opcode: 10 },
+      { nome: "SUB", numeroArgumentos: 1, opcode: 11 },
+      { nome: "MULT", numeroArgumentos: 1, opcode: 12 },
+      { nome: "DIV", numeroArgumentos: 1, opcode: 13 },
+      { nome: "RESTO", numeroArgumentos: 1, opcode: 14 },
+      { nome: "NEG", numeroArgumentos: 0, opcode: 15 },
+      { nome: "DESV", numeroArgumentos: 1, opcode: 16 },
+      { nome: "DESVZ", numeroArgumentos: 1, opcode: 17 },
+      { nome: "DESVNZ", numeroArgumentos: 1, opcode: 18 },
+      { nome: "DESVN", numeroArgumentos: 1, opcode: 19 },
+      { nome: "DESVP", numeroArgumentos: 1, opcode: 20 },
+      { nome: "CHAMA", numeroArgumentos: 1, opcode: 21 },
+      { nome: "RET", numeroArgumentos: 1, opcode: 22 },
+      { nome: "LE", numeroArgumentos: 1, opcode: 23 },
+      { nome: "ESCR", numeroArgumentos: 1, opcode: 24 },
     ];
   }
 
@@ -611,7 +616,11 @@ class Executor {
       return this.cpuEstado.pegaErro();
     }
 
-    switch (this.instrucoes[ObjetoValorOpcode.valor]) {
+    let comando = this.instrucoes.find((item) => {
+      return item.opcode === ObjetoValorOpcode.valor;
+    });
+
+    switch (comando.nome) {
       case "NOP":
         this.operacaoNOP();
         break;

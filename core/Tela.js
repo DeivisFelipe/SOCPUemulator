@@ -1,45 +1,24 @@
-import Erro from "./../core/Erro.js";
-import Controle from "./../core/Controle.js";
-
-var N_LIN = 24; // número de linhas na tela
-var N_COL = 80; // número de colunas na tela
-var N_TERM = 8; // número de terminais, cada um ocupa 2 linhas na tela
-
+import blessed from "blessed";
+let program = blessed.program();
+let N_LIN = 24; // número de linhas na tela
+let N_COL = 80; // número de colunas na tela
+let N_TERM = 8; // número de terminais, cada um ocupa 2 linhas na tela
 /**
- * Tela
- * entrada e saída de números, simulando vários terminais independentes
- * a entrada pode ser feita programaticamente (com a função t_ins) ou
- * interativamente, digitando uma letra (a para o primeiro terminal,
- * b para o segundo) e o número a entrar
- * além da saída em cada terminal (só números), tem a saída da console,
- * em formato livre (para debug)
+ * Classe para o ncurses
  */
 class Tela {
   /**
    * Contrustutor
-   * @param {Controle} controle
    */
-  constructor(controle) {
-    /**
-     * Controle
-     * @var {Controle} controle
-     */
-    this.controle = controle;
+    constructor() { }
 
-    this.paniquei = false;
-
-    this.arquivo = "ex4";
-
-    this.iniciaMemoria();
-  }
-
-  // fila de números
+      // fila de números
 #define FN_TAM 5  // quantos números cabem numa fila
 typedef struct {
   int num[FN_TAM]; // os números
   int n;           // quantos números válidos tem
 } fila_de_numeros;
-void fn_zera(fila_de_numeros *f)  // esvazia a fila
+ fn_zera(fila_de_numeros *f)  // esvazia a fila
 {
   f->n = 0;
 }
@@ -55,7 +34,7 @@ bool fn_vazia(fila_de_numeros *f) // retorna true se a fila estiver vazia
 {
   return fn_n(f) == 0;
 }
-void fn_ins(fila_de_numeros *f, int n) // insere n na fila f
+ fn_ins(fila_de_numeros *f, int n) // insere n na fila f
 {
   if (f->n < FN_TAM) f->num[f->n++] = n;
 }
@@ -82,8 +61,8 @@ struct {
   char txt_console[N_LIN_CONS][N_COL+1];  // texto das linhas da console
   char digitando[N_COL+1];                // texto da linha sendo digitada
 } tela;
-
-void t_inicio(void)
+    
+ t_inicio()
 {
   // inicializa a tela
   for (int t=0; t<N_TERM; t++) {
@@ -109,7 +88,7 @@ void t_inicio(void)
   init_pair(5, COLOR_BLACK, COLOR_RED);
 }
 
-void t_fim(void)
+ t_fim()
 {
   t_atualiza();
   attron(COLOR_PAIR(5));
@@ -126,7 +105,7 @@ bool t_livre(int t)
   return !fn_cheia(&tela.saida[t]);
 }
 
-void t_print(int t, int n)
+ t_print(int t, int n)
 {
   fn_ins(&tela.saida[t], n);
 }
@@ -141,12 +120,12 @@ int t_le(int t)
   return fn_rem(&tela.entrada[t]);
 }
 
-void t_ins(int t, int n)
+ t_ins(int t, int n)
 {
   fn_ins(&tela.entrada[t], n);
 }
 
-static void insere_string_na_console(char *s)
+insere_string_na_console(char *s)
 {
   for(int l=0; l<N_LIN_CONS-1; l++) {
     strncpy(tela.txt_console[l], tela.txt_console[l+1], N_COL);
@@ -156,7 +135,7 @@ static void insere_string_na_console(char *s)
   tela.txt_console[N_LIN_CONS-1][N_COL] = '\0'; // grrrr
 }
 
-static void insere_strings_na_console(char *s)
+insere_strings_na_console(char *s)
 {
   while (*s != '\0') {
     char *f = strchr(s, '\n');
@@ -169,7 +148,7 @@ static void insere_strings_na_console(char *s)
   }
 }
 
-void t_status(char *txt)
+ t_status(char *txt)
 {
   sprintf(tela.txt_status, "%-*s", N_COL, txt);
 }
@@ -186,7 +165,7 @@ int t_printf(char *formato, ...)
   return r;
 }
 
-static void interpreta_entrada(void)
+interpreta_entrada()
 {
   // por enquanto, reconhece os comandos tz e tn
   //   t é uma letra que identifica o terminal (a é o 1°, b o 2°, etc)
@@ -211,10 +190,10 @@ static void interpreta_entrada(void)
   tela.digitando[0] = '\0';
 }
 
-// vê se tem algum caractere digitado no teclado
+    // vê se tem algum caractere digitado no teclado
 //   adiciona à linha sendo digitada ou remove se for backspace ou
 //   interpreta a linha se for enter
-static void verifica_entrada(void)
+verificaEntrada()
 {
   int ch = getch();
   if (ch == ERR) return;
@@ -231,7 +210,7 @@ static void verifica_entrada(void)
   } // senão, ignora o caractere digitado
 }
 
-static void desenha_terminal(int t)
+desenhaTerminal(int t)
 {
   mvprintw(t*2, 0, "%80s", "");
   mvprintw(t*2+1, 0, "%80s", "");
@@ -245,7 +224,7 @@ static void desenha_terminal(int t)
   }
 }
 
-static void desenha_terminais(void)
+desenhaTerminais()
 {
   for (int t=0; t<N_TERM; t++) {
     attron(COLOR_PAIR(1+t%2));
@@ -254,14 +233,14 @@ static void desenha_terminais(void)
   }
 }
 
-static void desenha_status(void)
+desenhaStatus()
 {
   attron(COLOR_PAIR(4));
   mvprintw(N_TERM*2, 0, "%-*s", N_COL, tela.txt_status);
   attroff(COLOR_PAIR(4));
 }
 
-static void desenha_console(void)
+desenhaConsole()
 {
   attron(COLOR_PAIR(3));
   for (int l=0; l<N_LIN_CONS; l++) {
@@ -271,7 +250,7 @@ static void desenha_console(void)
   attroff(COLOR_PAIR(3));
 }
 
-static void desenha_entrada(void)
+desenhaEntrada()
 {
   attron(COLOR_PAIR(4));
   mvprintw(23, 0, "%-*s", N_COL, "");
@@ -279,24 +258,23 @@ static void desenha_entrada(void)
   attroff(COLOR_PAIR(4));
 }
 
-void t_atualiza(void)
-{
-  verifica_entrada();
+  atualiza() {
+    this.verificaEntrada();
 
-  // desenha a tela:
-  //   duas linhas para cada terminal, 
-  //   uma linha de status
-  //   tantas linhas da console,
-  //   uma linha de entrada
-  //clear();
-  desenha_terminais();
-  desenha_status();
-  desenha_console();
-  desenha_entrada();
+    // desenha a tela:
+    //   duas linhas para cada terminal,
+    //   uma linha de status
+    //   tantas linhas da console,
+    //   uma linha de entrada
+    //clear();
+    this.desenhaTerminais();
+    this.desenhaStatus();
+    this.desenhaConsole();
+    this.desenhaEntrada();
 
-  // manda o curses fazer aparecer tudo isso
-  refresh();
+    // manda o curses fazer aparecer tudo isso
+    this.refresh();
+  }
 }
 
-}
-
+export default Tela;

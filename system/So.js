@@ -61,7 +61,7 @@ class So {
       .filter(Boolean);
 
     // cria a memória
-    let memoria = new Memoria();
+    let memoria = this.controle.memoria;
 
     let instrucoes = [];
     // Percorre todas as linhas do arquivo asm

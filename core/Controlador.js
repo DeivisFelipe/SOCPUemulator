@@ -6,6 +6,7 @@ import { EntradaSaida } from "./EntradaSaida.js";
 // Dispositivos
 import Terminal from "./../resource/Terminal.js";
 import Relogio from "./../resource/Relogio.js";
+import Rand from "./../resource/Rand.js";
 
 /**
  * Controlador
@@ -79,6 +80,7 @@ class Controlador {
     // cria dispositivos de E/S (o relógio e um terminal)
     this.terminal = new Terminal();
     this.relogio = new Relogio();
+    this.rand = new Rand();
     //t_inicio();
     // cria o controlador de E/S e registra os dispositivos
     this.entradaSaida = new EntradaSaida();
@@ -108,9 +110,9 @@ class Controlador {
     );
     this.entradaSaida.registraDispositivo(
       3,
-      this.relogio,
+      this.rand,
       1,
-      this.relogio.le,
+      this.rand.le,
       null,
       null
     );
@@ -159,10 +161,8 @@ class Controlador {
     this.memoria.le(pc, opcode);
 
     let comando = this.instrucoes.find((item) => {
-      return item.opcode === opcode;
+      return item.opcode === opcode.valor;
     });
-
-    console.log(this.memoria);
 
     texto += `PC=${cpuEstado.pegaPC().toString().padStart(4, "0")} A=${cpuEstado
       .pegaA()
